@@ -16,20 +16,15 @@
         ></simple-whiteboard--tool-defaults>
       </simple-whiteboard>
     </main>
-    <footer>
-      <a href="https://github.com/ludovicm67/simple-whiteboard" target="_blank"
-        >GitHub</a
-      >
-      -
-      <a href="/" target="_blank">New Tab</a>
-      -
-      <a href="https://ludovic-muller.fr/" target="_blank"
-        >Created by Ludovic Muller</a
-      >
-    </footer>
     <script>
       const id = Math.random().toString(36).substr(2, 9);
       const app = document.getElementById("app");
+      
+      // Create WebSocket connection
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${window.location.hostname}:3000`;
+      const ws = new WebSocket(wsUrl);
+
       (async () => {
         await new Promise((resolve) => {
           window.customElements.whenDefined("simple-whiteboard").then(() => {
@@ -37,78 +32,72 @@
           });
         });
 
-        // Listen for items-updated event
-        app.addEventListener("items-updated", (e) => {
-          if (!e.detail.type) {
-            return;
-          }
+        // WebSocket connection handlers
+        ws.onopen = () => {
+          console.log('Connected to WebSocket server');
+          // Request initial state
+          ws.send(JSON.stringify({ type: 'join', id }));
+        };
 
-          console.log("Items updated event:", e.detail);
+        ws.onclose = () => {
+          console.log('Disconnected from WebSocket server');
+        };
 
-          switch (e.detail.type) {
-            case "add":
-              bc.postMessage({
-                type: "item-add",
-                item: e.detail.item,
-              });
-              break;
-            case "update":
-              bc.postMessage({
-                type: "item-update",
-                itemId: e.detail.itemId,
-                item: e.detail.item,
-              });
-              break;
-            case "clear":
-              bc.postMessage({
-                type: "clear",
-              });
-              break;
-            case "remove":
-              bc.postMessage({
-                type: "item-remove",
-                itemId: e.detail.itemId,
-              });
-              break;
-          }
-        });
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+        };
 
-        const bc = new BroadcastChannel("whiteboard-channel");
-        bc.postMessage({
-          type: "join",
-          id,
-        });
-        console.log("Client ID:", id);
+        // Handle incoming WebSocket messages
+        ws.onmessage = (e) => {
+          const data = JSON.parse(e.data);
+          if (!data.type) return;
 
-        bc.onmessage = (e) => {
-          if (!e.data.type) {
-            return;
-          }
-
-          switch (e.data.type) {
+          switch (data.type) {
             case "item-add":
-              app.addItem(e.data.item);
+              app.addItem(data.item);
               break;
             case "item-update":
-              app.updateItem(e.data.itemId, e.data.item);
+              app.updateItem(data.itemId, data.item);
               break;
             case "item-remove":
-              app.removeItemById(e.data.itemId);
-              break;
-            case "join":
-              bc.postMessage({
-                type: "sync",
-                items: app.getItems(),
-              });
+              app.removeItemById(data.itemId);
               break;
             case "sync":
-              app.setItems(e.data.items);
+              app.setItems(data.items);
               break;
             case "clear":
               app.clear();
               break;
           }
         };
+
+        // Listen for whiteboard updates
+        app.addEventListener("items-updated", (e) => {
+          if (!e.detail.type || ws.readyState !== WebSocket.OPEN) return;
+
+          const message = {
+            type: e.detail.type,
+            senderId: id
+          };
+
+          switch (e.detail.type) {
+            case "add":
+              message.item = e.detail.item;
+              break;
+            case "update":
+              message.itemId = e.detail.itemId;
+              message.item = e.detail.item;
+              break;
+            case "clear":
+              // No additional data needed
+              break;
+            case "remove":
+              message.itemId = e.detail.itemId;
+              break;
+          }
+
+          ws.send(JSON.stringify(message));
+        });
       })();
     </script>
   </body>

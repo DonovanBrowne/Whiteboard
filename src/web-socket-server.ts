@@ -15,19 +15,28 @@ const initWebSocketServer = () => {
         console.log('New WebSocket connection established');
         
         // Send the current state to the new client
-        ws.send(JSON.stringify(whiteboardState));
+        ws.send(JSON.stringify({ type: 'sync', items: whiteboardState }));
 
         ws.on('message', (message: string) => {
-            // Update whiteboard state
-            const update = JSON.parse(message.toString());
-            whiteboardState.push(update);
-            
-            // Broadcast to all clients
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(message.toString());
+            try {
+                // Update whiteboard state
+                const update = JSON.parse(message.toString());
+                
+                if (update.type === 'add' || update.type === 'update') {
+                    whiteboardState.push(update);
+                } else if (update.type === 'clear') {
+                    whiteboardState = [];
                 }
-            });
+                
+                // Broadcast to all clients except sender
+                wss.clients.forEach(client => {
+                    if (client !== ws && client.readyState === WebSocket.OPEN) {
+                        client.send(message.toString());
+                    }
+                });
+            } catch (error) {
+                console.error('Error processing message:', error);
+            }
         });
 
         ws.on('error', (error) => {
@@ -40,7 +49,7 @@ const initWebSocketServer = () => {
     });
 
     // Start server on port 3000
-    server.listen(3000, () => {
+    server.listen(3000, '0.0.0.0', () => {
         console.log('WebSocket server is running on port 3000');
     });
 
