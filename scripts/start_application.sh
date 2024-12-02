@@ -16,3 +16,4 @@ fi
 echo "Starting application..."
 sudo pm2 start npm --name vite -- run dev -- --host 0.0.0.0 --port 80
 exit 0
+
