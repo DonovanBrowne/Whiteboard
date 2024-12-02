@@ -17,6 +17,19 @@ sudo yum install -y nodejs
 echo "Installing dependencies..."
 sudo -u ec2-user npm install
 
+sudo npm install -g typescript
+
+# Check if ts-node is installed
+if ! command -v ts-node &> /dev/null; then
+    echo "Error: ts-node is not installed. Installing globally..."
+    sudo npm install -g ts-node
+else
+    echo "ts-node is already installed."
+fi
+
+# Fix permissions for ts-node
+sudo chmod +x /var/www/html/node_modules/.bin/ts-node
+
 # Build application
 echo "Building the application..."
 sudo -u ec2-user npm run build

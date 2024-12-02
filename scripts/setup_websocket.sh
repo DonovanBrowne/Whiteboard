@@ -13,18 +13,13 @@ else
     echo "PM2 is already installed."
 fi
 
-if sudo pm2 list | grep -q "websocket-server"; then
-    # Check if the process is actually online
-    if sudo pm2 list | grep "websocket-server" | grep -q "online"; then
-        echo "WebSocket server is running and online."
-    else
-        echo "WebSocket server exists but is not online. Restarting..."
-        sudo pm2 delete websocket-server
-        sudo pm2 start npm --name websocket-server -- run websocket -- --host 0.0.0.0 --port 3000
-    fi
-else
-    echo "Starting WebSocket server..."
-    sudo pm2 start npm --name websocket-server -- run websocket -- --host 0.0.0.0 --port 3000
-fi
+# Clean up existing PM2 processes and logs
+echo "Cleaning up PM2 processes and logs..."
+sudo pm2 delete all
+sudo pm2 flush
+
+# Start WebSocket server with the correct ts-node configuration
+echo "Starting WebSocket server..."
+sudo pm2 start ts-node --name websocket-server -- src/web-socket-server.ts --host 0.0.0.0 --port 3000 --node-args="--loader ts-node/esm"
 
 exit 0

@@ -9,7 +9,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prepack": "npm run build",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "websocket": "ts-node src/web-socket-server.ts"
   },
   "repository": {
     "type": "git",
@@ -31,6 +32,7 @@
     "@types/feather-icons": "^4.29.4",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
+    "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.1",
     "vite-plugin-dts": "^4.3.0",
