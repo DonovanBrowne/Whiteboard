@@ -2,10 +2,6 @@
 
 cd /var/www/html || { echo "Error: Unable to navigate to /var/www/html"; exit 1; }
 
-# Set environment variables
-echo "export INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)" >> ~/.bashrc
-source ~/.bashrc
-
 # Ensure proper permissions
 sudo chown -R ec2-user:ec2-user /var/www/html
 
@@ -17,8 +13,18 @@ else
     echo "PM2 is already installed."
 fi
 
-echo "Starting WebSocket server..."
-# Start WebSocket server with PM2 using npm
-sudo pm2 start npm --name websocket-server -- run websocket -- --host 0.0.0.0 --port 3000
+if sudo pm2 list | grep -q "websocket-server"; then
+    # Check if the process is actually online
+    if sudo pm2 list | grep "websocket-server" | grep -q "online"; then
+        echo "WebSocket server is running and online."
+    else
+        echo "WebSocket server exists but is not online. Restarting..."
+        sudo pm2 delete websocket-server
+        sudo pm2 start npm --name websocket-server -- run websocket -- --host 0.0.0.0 --port 3000
+    fi
+else
+    echo "Starting WebSocket server..."
+    sudo pm2 start npm --name websocket-server -- run websocket -- --host 0.0.0.0 --port 3000
+fi
 
 exit 0

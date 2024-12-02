@@ -9,16 +9,14 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "prepack": "npm run build",
-    "release": "changeset publish",
-    "websocket": "node websocket-server.js"
+    "release": "changeset publish"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ludovicm67/simple-whiteboard.git"
+    "url": "git+https://github.com/DonovanBrowne/whiteboard"
   },
   "author": {
-    "name": "Ludovic Muller",
-    "url": "https://ludovic-muller.fr/"
+    "name": "Donovan Browne"
   },
   "dependencies": {
     "feather-icons": "^4.29.2",
